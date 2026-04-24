@@ -130,7 +130,6 @@ def run(
         )
         if fill_round4 and not clues_only:
             from fill_round4 import run_fill
-
             run_fill(
                 path=out_path,
                 language=language,
@@ -169,15 +168,27 @@ def main() -> None:
         help="After saving, re-sync and play rounds 1–3 perfectly from this file, then fill round-4 targets (API only).",
     )
     args = ap.parse_args()
-    r0 = run(
-        out_path=args.output,
-        language=args.lang,
-        new_session=args.new_session,
-        token=args.token,
-        seed=args.seed,
-        clues_only=args.clues_only,
-        fill_round4=args.fill_round4,
-    )
+    try:
+        r0 = run(
+            out_path=args.output,
+            language=args.lang,
+            new_session=args.new_session,
+            token=args.token,
+            seed=args.seed,
+            clues_only=args.clues_only,
+            fill_round4=args.fill_round4,
+        )
+    except Exception as e:
+        if type(e) is ValueError and "target_words in JSON" in str(e):
+            run(
+                out_path=args.output,
+                language=args.lang,
+                new_session=args.new_session,
+                token=args.token,
+                seed=args.seed + 1 if args.seed is not None else None,
+                clues_only=True,
+                fill_round4=args.fill_round4,
+            )
     errs = validate_after_pipeline(
         args.output, r0.date, clues_only=args.clues_only, fill_round4=args.fill_round4
     )
