@@ -168,34 +168,25 @@ def main() -> None:
         help="After saving, re-sync and play rounds 1–3 perfectly from this file, then fill round-4 targets (API only).",
     )
     args = ap.parse_args()
-    try:
-        r0 = run(
-            out_path=args.output,
-            language=args.lang,
-            new_session=args.new_session,
-            token=args.token,
-            seed=args.seed,
-            clues_only=args.clues_only,
-            fill_round4=args.fill_round4,
-        )
-    except Exception as e:
-        if type(e) is ValueError and "target_words in JSON" in str(e):
-            run(
+    while True:
+        try:
+            r0 = run(
                 out_path=args.output,
                 language=args.lang,
                 new_session=args.new_session,
                 token=args.token,
-                seed=args.seed + 1 if args.seed is not None else None,
-                clues_only=True,
+                seed=args.seed,
+                clues_only=args.clues_only,
                 fill_round4=args.fill_round4,
+        )
+            errs = validate_after_pipeline(
+            args.output, r0.date, clues_only=args.clues_only, fill_round4=args.fill_round4
             )
-    errs = validate_after_pipeline(
-        args.output, r0.date, clues_only=args.clues_only, fill_round4=args.fill_round4
-    )
-    if errs:
-        for e in errs:
-            print(e, file=sys.stderr)
-        sys.exit(1)
+            if errs == []:
+                break
+            
+        except Exception as e:
+                print(f"Error during run: {e}. Retrying...", file=sys.stderr)
     print(f"Wrote/merged: {args.output.resolve()}")
     print("Log validation OK (four rounds).")
 
